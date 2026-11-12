@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": [
+    "supabase/functions/_shared/**/*.ts",
+    "supabase/functions/*/handler.ts",
+    "supabase/tests/**/*.ts",
+    "scripts/**/*.mts"
+  ],
+  "exclude": ["supabase/functions/_shared/supabase-deps.ts"]
+}
