@@ -14,6 +14,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: `nxtshift${nameSuffix}`,
   slug: "nxtshift",
+  owner: "ejnelson20",
   scheme: "nxtshift",
   version: "1.0.0",
   orientation: "portrait",
@@ -55,7 +56,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     typedRoutes: true,
   },
   extra: {
-    eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID },
+    eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? "6d4375b5-1472-4637-8de1-00e9ccce7004" },
     appVariant: APP_VARIANT,
   },
 });
