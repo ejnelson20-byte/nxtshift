@@ -1,0 +1,65 @@
+# Supabase CLI configuration for nxtshift (local development).
+# Unlisted keys use Supabase CLI defaults. Production settings are configured
+# in the Supabase dashboard; mirror the auth settings below there.
+project_id = "nxtshift"
+
+[api]
+enabled = true
+port = 54321
+# Only `public` is exposed through the Data API. `private` must never be added.
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 500
+
+[db]
+port = 54322
+major_version = 17
+
+[realtime]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "nxtshift://"
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+# nxtshift identities are anonymous; no email/phone collection.
+enable_anonymous_sign_ins = true
+
+[auth.rate_limit]
+# Anonymous sign-ins per hour per IP (defense against account farming for
+# invite brute force; the join function adds its own per-IP limit).
+anonymous_users = 30
+
+[auth.email]
+enable_signup = false
+
+[auth.sms]
+enable_signup = false
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+deno_version = 2
+
+# User-facing functions: the gateway verifies the JWT and the function
+# re-verifies it with auth.getUser() (defense in depth). If the project moves to
+# asymmetric JWT signing keys, set verify_jwt = false; in-code verification
+# remains authoritative.
+[functions.join-workspace]
+verify_jwt = true
+
+[functions.route-desk-ping]
+verify_jwt = true
+
+[functions.publish-top-alert]
+verify_jwt = true
+
+[functions.parse-shift-schedule]
+verify_jwt = true
+
+# Invoked by pg_cron/pg_net with a shared secret header, not a user JWT.
+[functions.dispatch-push]
+verify_jwt = false

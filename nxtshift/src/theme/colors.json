@@ -1,0 +1,15 @@
+{
+  "colors": {
+    "bg": "#090D14",
+    "bg-secondary": "#111827",
+    "card": "#17202E",
+    "elevated": "#1E293B",
+    "accent": "#38BDF8",
+    "text": "#F8FAFC",
+    "muted": "#94A3B8",
+    "success": "#22C55E",
+    "warning": "#F59E0B",
+    "critical": "#EF4444",
+    "border": "#293548"
+  }
+}

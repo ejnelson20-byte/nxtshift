@@ -1,0 +1,91 @@
+name: nxtshift CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["nxtshift/**", ".github/workflows/nxtshift-ci.yml"]
+  pull_request:
+    paths: ["nxtshift/**", ".github/workflows/nxtshift-ci.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nxtshift-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: nxtshift
+
+jobs:
+  app:
+    name: App — lint, types, tests, native bundles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: nxtshift/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm run test:app
+      - name: Bundle iOS + Android (Metro / NativeWind / Hermes)
+        env:
+          # Placeholder public values only — proves the bundle builds.
+          EXPO_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_value
+          EXPO_PUBLIC_EAS_PROJECT_ID: 00000000-0000-4000-8000-000000000000
+        run: npm run export:native
+      - name: Assert no server secrets in client bundles
+        run: |
+          ! grep -a -l -E "SUPABASE_SERVICE_ROLE_KEY|ESCALATION_CRON_SECRET|LLM_API_KEY|svc_claim_push_batch" -r dist/_expo
+
+  backend:
+    name: Backend — RLS/RPC tests (PGlite) + Edge Function tests + deno check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: nxtshift/package-lock.json
+      - run: npm ci
+      - run: npm run test:backend
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: npm run check:functions
+
+  supabase:
+    name: Migrations on the real Supabase stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start database (applies all migrations, incl. pg_cron / pg_net / Realtime)
+        run: supabase db start
+      - name: Lint database functions
+        run: supabase db lint --level warning --fail-on error
+      - name: Verify scheduled jobs exist
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -tAc \
+            "select count(*) from cron.job where jobname like 'nxtshift-%'" | grep -qx 3
+
+  audit:
+    name: Dependency audit (production deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --ignore-scripts
+      - run: npm audit --omit=dev --audit-level=high
